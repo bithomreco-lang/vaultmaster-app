@@ -968,6 +968,86 @@ export default function App() {
     }
   };
 
+  // Remove a specific email and unlink it from all associated vault items & team
+  const handleDeleteGmail = async (emailToDelete) => {
+    if (!window.confirm(`هل أنت متأكد من حذف وإزالة الإيميل "${emailToDelete}" من جميع العناصر والحسابات المرتبطة به؟`)) {
+      return;
+    }
+
+    // 1. Delete items that are exclusively this gmail account
+    const itemsToDelete = vaultItems.filter(i => i.category === 'gmail' && i.username === emailToDelete);
+    for (const item of itemsToDelete) {
+      await deleteVaultItemFromCloud(item.id);
+    }
+
+    // 2. Unlink this email from any blogs, hosts, domains, etc.
+    const updatedVault = [];
+    for (const item of vaultItems) {
+      if (item.category === 'gmail' && item.username === emailToDelete) {
+        continue;
+      }
+      let changed = false;
+      const copy = { ...item };
+      if (copy.linkedGmail === emailToDelete) { copy.linkedGmail = ''; changed = true; }
+      if (copy.wpAdminEmail === emailToDelete) { copy.wpAdminEmail = ''; changed = true; }
+      if (copy.adsenseEmail === emailToDelete) { copy.adsenseEmail = ''; changed = true; }
+      if (copy.analyticsEmail === emailToDelete) { copy.analyticsEmail = ''; changed = true; }
+      if (copy.hostingEmail === emailToDelete) { copy.hostingEmail = ''; changed = true; }
+      if (changed) {
+        await saveVaultItemToCloud(copy);
+      }
+      updatedVault.push(copy);
+    }
+
+    setVaultItems(updatedVault);
+    localStorage.setItem('VM_VAULT_ITEMS_PRO_V10', JSON.stringify(updatedVault));
+
+    // 3. Remove from team invitations if present
+    const updatedTeam = teamMembers.filter(m => m.email !== emailToDelete);
+    if (updatedTeam.length !== teamMembers.length) {
+      setTeamMembers(updatedTeam);
+      localStorage.setItem('VM_TEAM_MEMBERS_V2', JSON.stringify(updatedTeam));
+      await supabase.from('team_invitations').delete().eq('email', emailToDelete);
+    }
+
+    if (selectedGmailFilter === emailToDelete) {
+      setSelectedGmailFilter(null);
+    }
+  };
+
+  // Wipe all mock / placeholder sample data with 1-click
+  const handleClearSampleData = async () => {
+    if (!window.confirm('هل تريد حذف جميع البيانات التجريبية والوهمية دفعة واحدة للبدء بخزينة نظيفة تماماً؟')) {
+      return;
+    }
+
+    const sampleIds = ['item-1', 'item-2', 'item-3', 'item-4', 'item-5', 'item-6', 'item-7', 'item-8', 'item-9', 'item-10'];
+    const toDelete = vaultItems.filter(i => sampleIds.includes(i.id) || i.id.startsWith('item-'));
+    const toKeep = vaultItems.filter(i => !sampleIds.includes(i.id) && !i.id.startsWith('item-'));
+
+    for (const item of toDelete) {
+      await deleteVaultItemFromCloud(item.id);
+    }
+
+    setVaultItems(toKeep);
+    localStorage.setItem('VM_VAULT_ITEMS_PRO_V10', JSON.stringify(toKeep));
+
+    const realTeam = teamMembers.filter(m => m.id !== 'mem-1' && m.id !== 'mem-2' && m.id !== 'mem-3');
+    setTeamMembers(realTeam);
+    localStorage.setItem('VM_TEAM_MEMBERS_V2', JSON.stringify(realTeam));
+
+    setSelectedGmailFilter(null);
+    if (inspectedItem && (sampleIds.includes(inspectedItem.id) || inspectedItem.id.startsWith('item-'))) {
+      setInspectedItem(null);
+    }
+  };
+
+  // Detect whether sample demo items currently exist
+  const hasSampleData = useMemo(() => {
+    const sampleIds = ['item-1', 'item-2', 'item-3', 'item-4', 'item-5', 'item-6', 'item-7', 'item-8', 'item-9', 'item-10'];
+    return vaultItems.some(i => sampleIds.includes(i.id) || i.id.startsWith('item-'));
+  }, [vaultItems]);
+
   // Distinct Gmails List (Scans ALL multi-Gmail roles across assets)
   const allGmails = useMemo(() => {
     const list = [];
@@ -1260,11 +1340,10 @@ export default function App() {
     <div className={`w-full h-full min-h-screen flex text-left font-sans ${darkMode ? 'bg-[#0B1120] text-slate-100' : 'bg-[#F8FAFC] text-slate-900'}`}>
 
       {/* ─────────────────── LEFT PINNED SIDEBAR ─────────────────── */}
-      <aside className={`w-[320px] flex flex-col justify-between shrink-0 border-r ${darkMode ? 'bg-[#0F172A] border-slate-800' : 'bg-[#FFFFFF] border-slate-200'}`}>
-        <div>
-          
-          {/* 🌟 REFINED EXECUTIVE LOGO & BRAND HEADER */}
-          <div className={`h-20 px-6 border-b flex items-center justify-between ${darkMode ? 'border-slate-800' : 'border-slate-100'}`}>
+      <aside className={`w-[320px] h-screen flex flex-col shrink-0 border-r select-none ${darkMode ? 'bg-[#0F172A] border-slate-800' : 'bg-[#FFFFFF] border-slate-200'}`}>
+        
+        {/* 🌟 REFINED EXECUTIVE LOGO & BRAND HEADER */}
+        <div className={`h-20 px-6 border-b shrink-0 flex items-center justify-between ${darkMode ? 'border-slate-800' : 'border-slate-100'}`}>
             <div className="flex items-center gap-3.5">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-blue-700 via-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-600/30 shrink-0">
                 <ShieldCheck className="w-7 h-7 stroke-[2.3]" />
@@ -1310,8 +1389,11 @@ export default function App() {
             </div>
           </div>
 
+        {/* 🌟 SCROLLABLE MIDDLE CONTAINER FOR ALL SIDEBAR SECTIONS */}
+        <div className="flex-1 overflow-y-auto space-y-3 py-2 custom-scrollbar">
+
           {/* Vault Health Indicator */}
-          <div className="p-3.5 mx-4 mt-3 rounded-xl bg-blue-50/80 dark:bg-blue-950/30 border border-blue-200/80 dark:border-blue-900/50">
+          <div className="p-3.5 mx-4 rounded-xl bg-blue-50/80 dark:bg-blue-950/30 border border-blue-200/80 dark:border-blue-900/50">
             <div className="flex items-center justify-between text-xs mb-2">
               <span className="font-bold flex items-center gap-1.5 text-blue-800 dark:text-blue-300 text-xs">
                 <Sparkles className="w-3.5 h-3.5 text-blue-600" />
@@ -1338,7 +1420,7 @@ export default function App() {
 
           {/* 2FA Authenticator Status / Setup Card */}
           {!is2FAActive ? (
-            <div className="p-3 mx-4 mt-3 rounded-2xl bg-gradient-to-br from-indigo-950/60 via-slate-900 to-blue-950/60 border border-indigo-500/30 shadow-lg text-left">
+            <div className="p-3 mx-4 rounded-2xl bg-gradient-to-br from-indigo-950/60 via-slate-900 to-blue-950/60 border border-indigo-500/30 shadow-lg text-left">
               <div className="flex items-center justify-between mb-1.5">
                 <span className="flex items-center gap-1.5 text-xs font-black text-cyan-300">
                   <Smartphone className="w-3.5 h-3.5 text-cyan-400" />
@@ -1359,7 +1441,7 @@ export default function App() {
               </button>
             </div>
           ) : (
-            <div className="p-3 mx-4 mt-3 rounded-2xl bg-emerald-950/40 border border-emerald-500/30 flex items-center justify-between text-left">
+            <div className="p-3 mx-4 rounded-2xl bg-emerald-950/40 border border-emerald-500/30 flex items-center justify-between text-left">
               <div className="flex items-center gap-2">
                 <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
                 <div>
@@ -1378,7 +1460,7 @@ export default function App() {
           )}
 
           {/* Navigation Categories */}
-          <div className="p-4 space-y-1 max-h-[calc(100vh-360px)] overflow-y-auto">
+          <div className="px-4 space-y-1">
             <div className="text-[11px] font-black text-slate-400 uppercase tracking-wider px-3 py-1">
               Asset Categories
             </div>
@@ -1419,7 +1501,7 @@ export default function App() {
           </div>
 
           {/* 🌟 COLLABORATION & TEAM VAULT SHARING */}
-          <div className="p-4 pt-1 pb-2">
+          <div className="px-4 pt-1">
             <div className="text-[11px] font-black text-slate-400 uppercase tracking-wider px-3 py-1 flex items-center justify-between">
               <span>Collaboration & Team</span>
             </div>
@@ -1451,10 +1533,24 @@ export default function App() {
             </button>
           </div>
 
+          {/* 🌟 CLEAR SAMPLE DATA BUTTON (When demo items exist) */}
+          {hasSampleData && (
+            <div className="px-4 pt-1">
+              <button
+                onClick={handleClearSampleData}
+                className="w-full py-2 px-3 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/20 text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer shadow-sm"
+                title="حذف جميع البيانات التجريبية والوهمية للبدء بخزينة نظيفة تماماً"
+              >
+                <Trash2 className="w-3.5 h-3.5 shrink-0" />
+                <span>مسح البيانات الوهمية (Clear Demo)</span>
+              </button>
+            </div>
+          )}
+
           {/* Isolate by Gmail */}
-          <div className="p-4 pt-1">
+          <div className="px-4 pt-1 pb-4">
             <div className="text-[11px] font-black text-slate-400 uppercase tracking-wider px-3 py-1 flex items-center justify-between">
-              <span>Isolate by Gmail</span>
+              <span>Isolate by Gmail ({allGmails.length})</span>
               {selectedGmailFilter && (
                 <button 
                   onClick={() => setSelectedGmailFilter(null)} 
@@ -1465,43 +1561,68 @@ export default function App() {
               )}
             </div>
 
-            <div className="space-y-1 mt-1 max-h-44 overflow-y-auto pr-1">
-              {allGmails.map((email, idx) => {
-                const isSelected = selectedGmailFilter === email;
-                const tiedCount = vaultItems.filter(i => 
-                  i.linkedGmail === email || 
-                  i.wpAdminEmail === email || 
-                  i.adsenseEmail === email || 
-                  i.analyticsEmail === email || 
-                  i.hostingEmail === email || 
-                  i.username === email
-                ).length;
-                return (
-                  <button
-                    key={idx}
-                    onClick={() => setSelectedGmailFilter(isSelected ? null : email)}
-                    className={`w-full text-left px-3 py-2 rounded-xl text-xs font-mono transition flex items-center justify-between cursor-pointer ${
-                      isSelected
-                        ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-700 font-bold'
-                        : darkMode 
-                          ? 'text-slate-300 hover:bg-slate-800/80' 
-                          : 'text-slate-700 hover:bg-slate-100'
-                    }`}
-                  >
-                    <span className="truncate max-w-[190px]">{email}</span>
-                    <span className="text-[11px] px-2 py-0.5 rounded-md bg-slate-200/70 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold">
-                      {tiedCount}
-                    </span>
-                  </button>
-                );
-              })}
+            <div className="space-y-1 mt-1">
+              {allGmails.length === 0 ? (
+                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-dashed border-slate-200 dark:border-slate-800 text-[11px] text-slate-400 text-center">
+                  لا توجد إيميلات مسجلة حالياً
+                </div>
+              ) : (
+                allGmails.map((email, idx) => {
+                  const isSelected = selectedGmailFilter === email;
+                  const tiedCount = vaultItems.filter(i => 
+                    i.linkedGmail === email || 
+                    i.wpAdminEmail === email || 
+                    i.adsenseEmail === email || 
+                    i.analyticsEmail === email || 
+                    i.hostingEmail === email || 
+                    i.username === email
+                  ).length;
+                  return (
+                    <div
+                      key={idx}
+                      className={`group w-full px-2.5 py-1.5 rounded-xl text-xs font-mono transition flex items-center justify-between ${
+                        isSelected
+                          ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-700 font-bold'
+                          : darkMode 
+                            ? 'text-slate-300 hover:bg-slate-800/80' 
+                            : 'text-slate-700 hover:bg-slate-100'
+                      }`}
+                    >
+                      <button
+                        onClick={() => setSelectedGmailFilter(isSelected ? null : email)}
+                        className="flex-1 text-left truncate flex items-center gap-1.5 min-w-0 cursor-pointer"
+                        title={email}
+                      >
+                        <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                        <span className="truncate max-w-[170px]">{email}</span>
+                      </button>
+
+                      <div className="flex items-center gap-1 shrink-0 ml-1">
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-200/70 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold">
+                          {tiedCount}
+                        </span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteGmail(email);
+                          }}
+                          title={`إزالة وحذف هذا الإيميل (${email})`}
+                          className="p-1 rounded text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
 
         </div>
 
-        {/* Footer */}
-        <div className={`p-4 border-t text-xs ${darkMode ? 'border-slate-800 text-slate-500' : 'border-slate-100 text-slate-500'}`}>
+        {/* Footer (Pinned at Bottom) */}
+        <div className={`p-4 border-t shrink-0 text-xs ${darkMode ? 'border-slate-800 text-slate-500' : 'border-slate-100 text-slate-500'}`}>
           <div className="flex items-center justify-between text-xs font-medium">
             <span className="flex items-center gap-1.5 text-emerald-600 font-bold">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
