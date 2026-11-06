@@ -24,12 +24,12 @@ export default function LandingPage({ onOpenVault }) {
     setDownloadCount(prev => prev + 1);
 
     // Official Windows Installer Direct Download URL from GitHub Releases
-    const directDownloadUrl = 'https://github.com/bithomreco-lang/vaultmaster-app/releases/download/v1.0.0/VaultMaster-OS-Setup-1.0.0.exe';
+    const directDownloadUrl = 'https://github.com/bithomreco-lang/vaultmaster-app/releases/download/v1.0.1/VaultMaster-OS-Setup-1.0.1.exe';
     
     // Trigger download
     const link = document.createElement('a');
     link.href = directDownloadUrl;
-    link.setAttribute('download', 'VaultMaster-OS-Setup-1.0.0.exe');
+    link.setAttribute('download', 'VaultMaster-OS-Setup-1.0.1.exe');
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

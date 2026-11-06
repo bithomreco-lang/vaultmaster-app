@@ -397,15 +397,18 @@ export default function App() {
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState('');
 
-  // View Mode: 'landing' (Homepage) | 'app' (Vault Dashboard)
-  const [activeView, setActiveView] = useState(() => {
-    if (typeof window !== 'undefined' && window.location.hash === '#app') return 'app';
-    return 'landing';
-  });
+  // Detect if running inside Desktop Application (Electron)
+  const isDesktop = typeof window !== 'undefined' && (
+    window.location.hash === '#app' ||
+    window.navigator.userAgent.toLowerCase().includes('electron')
+  );
+
+  // View Mode: 'landing' (Web Homepage) | 'app' (Vault Login & Dashboard)
+  const [activeView, setActiveView] = useState(() => isDesktop ? 'app' : 'landing');
 
   useEffect(() => {
     const handleHashChange = () => {
-      if (window.location.hash === '#app') {
+      if (window.location.hash === '#app' || isDesktop) {
         setActiveView('app');
       } else if (window.location.hash === '#landing' || !window.location.hash) {
         setActiveView('landing');
@@ -413,7 +416,7 @@ export default function App() {
     };
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
-  }, []);
+  }, [isDesktop]);
 
 
   // ── TEAM & VAULT SHARING STATE ──
@@ -465,6 +468,32 @@ export default function App() {
       }
     });
 
+    // Listen for OAuth success from Electron Desktop loopback server
+    if (typeof window !== 'undefined' && window.electronAPI?.onAuthSuccess) {
+      window.electronAPI.onAuthSuccess(async ({ accessToken, refreshToken }) => {
+        setAuthLoading(true);
+        try {
+          const { data, error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken
+          });
+          if (data?.session?.user) {
+            const user = data.session.user;
+            setCurrentUser({
+              email: user.email,
+              name: user.user_metadata?.full_name || user.email.split('@')[0],
+              avatar: user.user_metadata?.avatar_url
+            });
+            setActiveView('app');
+          }
+        } catch (err) {
+          console.error('Session sync error:', err);
+        } finally {
+          setAuthLoading(false);
+        }
+      });
+    }
+
     return () => subscription.unsubscribe();
   }, []);
 
@@ -472,14 +501,20 @@ export default function App() {
     setAuthLoading(true);
     setAuthError('');
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: window.location.origin
+      if (typeof window !== 'undefined' && window.electronAPI?.startGoogleAuth) {
+        // In Desktop Electron: Open system default browser (Chrome/Edge) where user is already logged into Google!
+        await window.electronAPI.startGoogleAuth();
+      } else {
+        // In Web Browser (Vercel): Standard Supabase OAuth redirect
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: window.location.origin
+          }
+        });
+        if (error) {
+          setAuthError(error.message);
         }
-      });
-      if (error) {
-        setAuthError(error.message);
       }
     } catch (err) {
       setAuthError(err.message);
@@ -921,18 +956,20 @@ export default function App() {
               <p className="text-xs text-rose-400 font-bold mt-2">{authError}</p>
             )}
 
-            <button
-              onClick={() => {
-                if (typeof window !== 'undefined') {
-                  window.location.hash = '';
-                }
-                setActiveView('landing');
-              }}
-              className="pt-2 text-xs text-slate-400 hover:text-white flex items-center justify-center gap-1.5 mx-auto transition cursor-pointer"
-            >
-              <span>←</span>
-              <span>Back to Homepage (العودة للرئيسية)</span>
-            </button>
+            {!isDesktop && (
+              <button
+                onClick={() => {
+                  if (typeof window !== 'undefined') {
+                    window.location.hash = '';
+                  }
+                  setActiveView('landing');
+                }}
+                className="pt-2 text-xs text-slate-400 hover:text-white flex items-center justify-center gap-1.5 mx-auto transition cursor-pointer"
+              >
+                <span>←</span>
+                <span>Back to Homepage (العودة للرئيسية)</span>
+              </button>
+            )}
           </div>
 
           <div className="mt-8 pt-4 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-500 font-mono">
