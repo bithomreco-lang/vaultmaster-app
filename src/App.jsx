@@ -63,6 +63,7 @@ import {
   saveTeamInviteToCloud,
   acceptInviteWithPin
 } from './supabase';
+import LandingPage from './LandingPage';
 
 // ── CUSTOM VECTOR ICONS (Crisp, High-Contrast & Strict Fixed Dimensions) ──
 const GoogleIcon = ({ className = "w-5 h-5" }) => (
@@ -391,10 +392,23 @@ const INITIAL_TEAM_MEMBERS = [
 ];
 
 export default function App() {
-  // Official Authentication State (Sign in with Google)
-  const [currentUser, setCurrentUser] = useState(null);
-  const [authLoading, setAuthLoading] = useState(false);
-  const [authError, setAuthError] = useState('');
+  // View Mode: 'landing' (Homepage) | 'app' (Vault Dashboard)
+  const [activeView, setActiveView] = useState(() => {
+    if (typeof window !== 'undefined' && window.location.hash === '#app') return 'app';
+    return 'landing';
+  });
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      if (window.location.hash === '#app') {
+        setActiveView('app');
+      } else if (window.location.hash === '#landing' || !window.location.hash) {
+        setActiveView('landing');
+      }
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
 
 
   // ── TEAM & VAULT SHARING STATE ──
@@ -472,6 +486,10 @@ export default function App() {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setCurrentUser(null);
+    if (typeof window !== 'undefined') {
+      window.location.hash = '';
+    }
+    setActiveView('landing');
   };
 
   // App State
@@ -850,6 +868,22 @@ export default function App() {
   }, [vaultItems, allGmails, selectedGmailFilter, searchQuery]);
 
   // ─────────────────────────────────────────────────────────────
+  // 0. LANDING PAGE VIEW (الصفحة الرئيسية)
+  // ─────────────────────────────────────────────────────────────
+  if (activeView === 'landing') {
+    return (
+      <LandingPage 
+        onOpenVault={() => {
+          if (typeof window !== 'undefined') {
+            window.location.hash = '#app';
+          }
+          setActiveView('app');
+        }} 
+      />
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────
   // 1. OFFICIAL GOOGLE SIGN-IN SCREEN (تسجيل الدخول الرسمي بجوجل فقط)
   // ─────────────────────────────────────────────────────────────
   if (!currentUser) {
@@ -881,6 +915,19 @@ export default function App() {
             {authError && (
               <p className="text-xs text-rose-400 font-bold mt-2">{authError}</p>
             )}
+
+            <button
+              onClick={() => {
+                if (typeof window !== 'undefined') {
+                  window.location.hash = '';
+                }
+                setActiveView('landing');
+              }}
+              className="pt-2 text-xs text-slate-400 hover:text-white flex items-center justify-center gap-1.5 mx-auto transition cursor-pointer"
+            >
+              <span>←</span>
+              <span>Back to Homepage (العودة للرئيسية)</span>
+            </button>
           </div>
 
           <div className="mt-8 pt-4 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-500 font-mono">
@@ -920,6 +967,17 @@ export default function App() {
             </div>
 
             <div className="flex items-center gap-1.5">
+              <button 
+                onClick={() => {
+                  if (typeof window !== 'undefined') window.location.hash = '';
+                  setActiveView('landing');
+                }}
+                className={`p-2 rounded-xl transition ${darkMode ? 'text-slate-400 hover:bg-slate-800 hover:text-white' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'}`}
+                title="View Homepage / Landing Page"
+              >
+                <Globe className="w-4.5 h-4.5" />
+              </button>
+
               <button 
                 onClick={() => setDarkMode(!darkMode)}
                 className={`p-2 rounded-xl transition ${darkMode ? 'text-amber-400 hover:bg-slate-800' : 'text-slate-500 hover:bg-slate-100'}`}
