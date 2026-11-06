@@ -14,56 +14,25 @@ export default function LandingPage({ onOpenVault }) {
     setTimeout(() => setIsSyncing(false), 1200);
   };
 
-  // Real download of standalone offline vault
+  // Official Windows Desktop Installer Download (.exe)
   const handleDownload = () => {
     confetti({
-      particleCount: 80,
-      spread: 60,
+      particleCount: 90,
+      spread: 70,
       origin: { y: 0.6 }
     });
     setDownloadCount(prev => prev + 1);
 
-    const vaultHtml = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>VaultMaster Pro - Sovereign Offline Vault</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <style>
-    :root { --blue:#1D4ED8; --bg:#F8FAFC; --card:#FFFFFF; --text:#0F172A; --muted:#64748B; --border:#E2E8F0; }
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family:'Plus Jakarta Sans',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px; }
-    .card { background:var(--card); border:1px solid var(--border); border-radius:24px; padding:44px 36px; max-width:560px; width:100%; box-shadow:0 20px 45px rgba(0,0,0,0.06); text-align:center; }
-    .icon { width:64px; height:64px; border-radius:18px; background:#EFF6FF; color:var(--blue); display:flex; align-items:center; justify-content:center; font-size:30px; margin:0 auto 20px; }
-    h1 { font-size:24px; font-weight:800; color:var(--text); margin-bottom:8px; }
-    p { font-size:14px; color:var(--muted); line-height:1.6; margin-bottom:24px; }
-    input { width:100%; padding:14px 16px; border:1.5px solid var(--border); border-radius:12px; font-size:15px; outline:none; margin-bottom:16px; }
-    input:focus { border-color:var(--blue); }
-    button { width:100%; padding:14px; border-radius:12px; background:var(--blue); color:#fff; font-size:15px; font-weight:700; border:none; cursor:pointer; }
-    button:hover { background:#1E40AF; }
-    .footer { margin-top:20px; font-size:12px; color:var(--muted); }
-  </style>
-</head>
-<body>
-  <div class="card">
-    <div class="icon">🛡️</div>
-    <h1>VaultMaster Offline Sovereign</h1>
-    <p>Your passwords, blogs, Hostinger servers, and Gmail inboxes are stored locally with AES-256-GCM encryption. Zero servers, zero trackers.</p>
-    <input type="password" placeholder="Enter your Master Password...">
-    <button onclick="alert('Vault Unlocked! AES-256 decrypted in local memory.')">Unlock Vault</button>
-    <div class="footer">🔒 Air-Gapped • 100% Offline</div>
-  </div>
-</body>
-</html>`;
-
-    const blob = new Blob([vaultHtml], { type: 'text/html;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'VaultMaster_Windows_Offline.html';
-    a.click();
-    URL.revokeObjectURL(url);
+    // Official Windows Installer Direct Download URL from GitHub Releases
+    const directDownloadUrl = 'https://github.com/bithomreco-lang/vaultmaster-app/releases/download/v1.0.0/VaultMaster-OS-Setup-1.0.0.exe';
+    
+    // Trigger download
+    const link = document.createElement('a');
+    link.href = directDownloadUrl;
+    link.setAttribute('download', 'VaultMaster-OS-Setup-1.0.0.exe');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   // Mock data for interactive laptop screen
