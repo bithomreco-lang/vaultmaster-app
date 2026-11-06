@@ -392,6 +392,11 @@ const INITIAL_TEAM_MEMBERS = [
 ];
 
 export default function App() {
+  // Official Authentication State (Sign in with Google)
+  const [currentUser, setCurrentUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState('');
+
   // View Mode: 'landing' (Homepage) | 'app' (Vault Dashboard)
   const [activeView, setActiveView] = useState(() => {
     if (typeof window !== 'undefined' && window.location.hash === '#app') return 'app';
