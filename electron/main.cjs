@@ -22,11 +22,24 @@ function createWindow() {
   });
 
   const isDev = process.env.NODE_ENV === 'development';
+  const CLOUD_APP_URL = 'https://vaultmaster-app.vercel.app/#app';
 
   if (isDev) {
     mainWindow.loadURL('http://localhost:5174/#app');
   } else {
-    mainWindow.loadFile(path.join(__dirname, '../dist/index.html'), { hash: 'app' });
+    // Instant Cloud Sync: Load live production build directly so all users get updates instantly without reinstalling!
+    mainWindow.loadURL(CLOUD_APP_URL).catch((err) => {
+      console.warn('Could not reach cloud URL, loading offline bundle:', err);
+      mainWindow.loadFile(path.join(__dirname, '../dist/index.html'), { hash: 'app' });
+    });
+
+    // Offline fallback if internet drops or fails during load
+    mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL) => {
+      if (validatedURL && validatedURL.startsWith('https://vaultmaster-app.vercel.app')) {
+        console.warn('Network issue loading cloud app, falling back to local bundle...');
+        mainWindow.loadFile(path.join(__dirname, '../dist/index.html'), { hash: 'app' });
+      }
+    });
   }
 
   // Open external links in default web browser
