@@ -141,6 +141,139 @@ const AdSenseIcon = ({ className = "w-4 h-4", size = 18 }) => (
   </svg>
 );
 
+// ── SOCIAL MEDIA BRAND SVG ICONS ──
+const PinterestIcon = ({ className = "w-4 h-4", size = 16 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={`shrink-0 inline-block ${className}`}>
+    <path d="M12 0C5.373 0 0 5.373 0 12c0 5.084 3.163 9.426 7.627 11.174-.105-.949-.2-2.405.042-3.441.218-.937 1.407-5.965 1.407-5.965s-.359-.719-.359-1.782c0-1.668.967-2.914 2.171-2.914 1.023 0 1.518.769 1.518 1.69 0 1.029-.655 2.568-.994 3.995-.283 1.194.599 2.169 1.777 2.169 2.133 0 3.772-2.249 3.772-5.495 0-2.873-2.064-4.882-5.012-4.882-3.414 0-5.418 2.561-5.418 5.207 0 1.031.397 2.138.893 2.738a.36.36 0 0 1 .083.345l-.333 1.36c-.053.22-.174.267-.402.161-1.499-.698-2.436-2.889-2.436-4.649 0-3.785 2.75-7.262 7.929-7.262 4.163 0 7.398 2.967 7.398 6.931 0 4.136-2.607 7.464-6.227 7.464-1.216 0-2.359-.631-2.75-1.378l-.748 2.853c-.271 1.043-1.002 2.35-1.492 3.146C9.57 23.812 10.763 24 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z"/>
+  </svg>
+);
+
+const YouTubeIcon = ({ className = "w-4 h-4", size = 16 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={`shrink-0 inline-block ${className}`}>
+    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+  </svg>
+);
+
+const FacebookIcon = ({ className = "w-4 h-4", size = 16 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={`shrink-0 inline-block ${className}`}>
+    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+  </svg>
+);
+
+const InstagramIcon = ({ className = "w-4 h-4", size = 16 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={`shrink-0 inline-block ${className}`}>
+    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+  </svg>
+);
+
+const TikTokIcon = ({ className = "w-4 h-4", size = 16 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={`shrink-0 inline-block ${className}`}>
+    <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.24 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/>
+  </svg>
+);
+
+const TwitterXIcon = ({ className = "w-4 h-4", size = 16 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={`shrink-0 inline-block ${className}`}>
+    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+  </svg>
+);
+
+const LinkedInIcon = ({ className = "w-4 h-4", size = 16 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={`shrink-0 inline-block ${className}`}>
+    <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
+  </svg>
+);
+
+const SocialPlatformIcon = ({ platform, size = 15, className = "" }) => {
+  switch (platform) {
+    case 'pinterest': return <PinterestIcon size={size} className={className} />;
+    case 'youtube': return <YouTubeIcon size={size} className={className} />;
+    case 'facebook': return <FacebookIcon size={size} className={className} />;
+    case 'instagram': return <InstagramIcon size={size} className={className} />;
+    case 'tiktok': return <TikTokIcon size={size} className={className} />;
+    case 'twitter':
+    case 'x': return <TwitterXIcon size={size} className={className} />;
+    case 'linkedin': return <LinkedInIcon size={size} className={className} />;
+    default: return <Share2 size={size} className={className} />;
+  }
+};
+
+// Auto-detect social media platform from customType, url, or title
+function detectSocialPlatform(item) {
+  if (!item) return null;
+  const custom = (item.customType || '').toLowerCase().trim();
+  const url = (item.url || '').toLowerCase().trim();
+  const title = (item.title || '').toLowerCase().trim();
+  const username = (item.username || '').toLowerCase().trim();
+
+  const combined = `${custom} ${url} ${title} ${username}`;
+
+  if (combined.includes('pinterest') || combined.includes('pin.it')) {
+    return {
+      id: 'pinterest',
+      label: 'Pinterest',
+      badgeColor: 'bg-rose-50 dark:bg-rose-950/70 text-[#E60023] dark:text-rose-400 border-rose-300 dark:border-rose-800',
+      tagColor: 'text-[#E60023]',
+      icon: 'pinterest'
+    };
+  }
+  if (combined.includes('youtube') || combined.includes('youtu.be')) {
+    return {
+      id: 'youtube',
+      label: 'YouTube',
+      badgeColor: 'bg-red-50 dark:bg-red-950/70 text-[#FF0000] dark:text-red-400 border-red-300 dark:border-red-800',
+      tagColor: 'text-[#FF0000]',
+      icon: 'youtube'
+    };
+  }
+  if (combined.includes('facebook') || combined.includes('fb.com') || combined.includes('fb.me')) {
+    return {
+      id: 'facebook',
+      label: 'Facebook',
+      badgeColor: 'bg-blue-50 dark:bg-blue-950/70 text-[#1877F2] dark:text-blue-400 border-blue-300 dark:border-blue-800',
+      tagColor: 'text-[#1877F2]',
+      icon: 'facebook'
+    };
+  }
+  if (combined.includes('instagram') || combined.includes('instagr.am')) {
+    return {
+      id: 'instagram',
+      label: 'Instagram',
+      badgeColor: 'bg-pink-50 dark:bg-pink-950/70 text-[#E1306C] dark:text-pink-400 border-pink-300 dark:border-pink-800',
+      tagColor: 'text-[#E1306C]',
+      icon: 'instagram'
+    };
+  }
+  if (combined.includes('tiktok')) {
+    return {
+      id: 'tiktok',
+      label: 'TikTok',
+      badgeColor: 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white border-slate-300 dark:border-slate-700',
+      tagColor: 'text-slate-900 dark:text-white',
+      icon: 'tiktok'
+    };
+  }
+  if (combined.includes('twitter') || combined.includes('x.com') || custom === 'x') {
+    return {
+      id: 'twitter',
+      label: 'X (Twitter)',
+      badgeColor: 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white border-slate-300 dark:border-slate-700',
+      tagColor: 'text-slate-900 dark:text-white',
+      icon: 'twitter'
+    };
+  }
+  if (combined.includes('linkedin')) {
+    return {
+      id: 'linkedin',
+      label: 'LinkedIn',
+      badgeColor: 'bg-sky-50 dark:bg-sky-950/70 text-[#0A66C2] dark:text-sky-400 border-sky-300 dark:border-sky-800',
+      tagColor: 'text-[#0A66C2]',
+      icon: 'linkedin'
+    };
+  }
+  return null;
+}
+
 // ── UNIFIED CATEGORY METADATA & COMPONENT ──
 const CATEGORIES_LIST = [
   { id: 'all', label: 'All Items', icon: FolderLock, desc: 'Everything in your vault' },
@@ -2608,29 +2741,39 @@ export default function App() {
                                 Social Networks Linked to this Gmail ({group.socials.length}):
                               </div>
                               <div className="flex flex-wrap gap-2">
-                                {group.socials.map(soc => (
-                                  <div
-                                    key={soc.id}
-                                    className={`px-3 py-1.5 rounded-lg border text-xs font-mono flex items-center gap-2 transition ${
-                                      darkMode ? 'bg-slate-900 border-slate-800 text-emerald-300' : 'bg-emerald-50/70 border-emerald-200 text-emerald-900'
-                                    }`}
-                                  >
-                                    <Share2 className="w-3.5 h-3.5 text-emerald-500" />
-                                    <span 
-                                      onClick={() => setInspectedItem(soc)}
-                                      className="font-bold cursor-pointer hover:underline text-xs"
+                                {group.socials.map(soc => {
+                                  const p = detectSocialPlatform(soc);
+                                  return (
+                                    <div
+                                      key={soc.id}
+                                      className={`px-3 py-1.5 rounded-lg border text-xs font-mono flex items-center gap-2 transition ${
+                                        p
+                                          ? darkMode ? 'bg-slate-900 border-slate-800' : 'bg-slate-50 border-slate-200'
+                                          : darkMode ? 'bg-slate-900 border-slate-800 text-emerald-300' : 'bg-emerald-50/70 border-emerald-200 text-emerald-900'
+                                      }`}
                                     >
-                                      {soc.title}
-                                    </span>
-                                    <button
-                                      onClick={() => copyText(soc.password, soc.id)}
-                                      className="ml-1 text-xs hover:text-emerald-600 font-sans font-bold cursor-pointer"
-                                      title="Copy Password"
-                                    >
-                                      {copiedId === soc.id ? '✓' : '🔑'}
-                                    </button>
-                                  </div>
-                                ))}
+                                      <SocialPlatformIcon platform={p?.id} size={14} className={p?.tagColor || 'text-emerald-500'} />
+                                      <span 
+                                        onClick={() => setInspectedItem(soc)}
+                                        className="font-bold cursor-pointer hover:underline text-xs flex items-center gap-1.5"
+                                      >
+                                        <span>{soc.title}</span>
+                                        {p && (
+                                          <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded ${p.badgeColor}`}>
+                                            {p.label}
+                                          </span>
+                                        )}
+                                      </span>
+                                      <button
+                                        onClick={() => copyText(soc.password, soc.id)}
+                                        className="ml-1 text-xs hover:text-emerald-600 font-sans font-bold cursor-pointer"
+                                        title="Copy Password"
+                                      >
+                                        {copiedId === soc.id ? '✓' : '🔑'}
+                                      </button>
+                                    </div>
+                                  );
+                                })}
                               </div>
                             </div>
                           )}
@@ -2663,10 +2806,23 @@ export default function App() {
                   <div>
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-black uppercase px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-300 border border-blue-200 dark:border-blue-800 flex items-center gap-1.5">
-                          <CategoryIcon category={item.category} size={14} />
-                          <span>{item.customType || CATEGORIES_LIST.find(c => c.id === item.category)?.label || item.category}</span>
-                        </span>
+                        {(() => {
+                          const soc = item.category === 'social' ? detectSocialPlatform(item) : null;
+                          if (soc) {
+                            return (
+                              <span className={`text-xs font-black uppercase px-2.5 py-1 rounded-lg border flex items-center gap-1.5 shadow-sm ${soc.badgeColor}`}>
+                                <SocialPlatformIcon platform={soc.id} size={14} className={soc.tagColor} />
+                                <span>{soc.label}</span>
+                              </span>
+                            );
+                          }
+                          return (
+                            <span className="text-xs font-black uppercase px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-300 border border-blue-200 dark:border-blue-800 flex items-center gap-1.5">
+                              <CategoryIcon category={item.category} size={14} />
+                              <span>{item.customType || CATEGORIES_LIST.find(c => c.id === item.category)?.label || item.category}</span>
+                            </span>
+                          );
+                        })()}
                         {item.analyticsAccount && (
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                             GA4
@@ -2772,10 +2928,23 @@ export default function App() {
 
             <div>
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-xs font-bold uppercase px-2.5 py-1 rounded-lg bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 flex items-center gap-1.5">
-                  <CategoryIcon category={inspectedItem.category} size={14} />
-                  <span>{CATEGORIES_LIST.find(c => c.id === inspectedItem.category)?.label || inspectedItem.category}</span>
-                </span>
+                {(() => {
+                  const soc = inspectedItem.category === 'social' ? detectSocialPlatform(inspectedItem) : null;
+                  if (soc) {
+                    return (
+                      <span className={`text-xs font-black uppercase px-2.5 py-1 rounded-lg border flex items-center gap-1.5 shadow-sm ${soc.badgeColor}`}>
+                        <SocialPlatformIcon platform={soc.id} size={14} className={soc.tagColor} />
+                        <span>{soc.label}</span>
+                      </span>
+                    );
+                  }
+                  return (
+                    <span className="text-xs font-bold uppercase px-2.5 py-1 rounded-lg bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 flex items-center gap-1.5">
+                      <CategoryIcon category={inspectedItem.category} size={14} />
+                      <span>{CATEGORIES_LIST.find(c => c.id === inspectedItem.category)?.label || inspectedItem.category}</span>
+                    </span>
+                  );
+                })()}
                 {inspectedItem.status === 'warning' && (
                   <span className="text-xs font-bold px-3 py-1 rounded-full bg-amber-100 text-amber-800 flex items-center gap-1">
                     <AlertTriangle className="w-3.5 h-3.5" />
@@ -3240,6 +3409,67 @@ export default function App() {
                   )}
                 </div>
               </div>
+
+              {formData.category === 'social' && (
+                <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-50/70 via-indigo-50/50 to-pink-50/70 dark:from-blue-950/30 dark:via-indigo-950/20 dark:to-pink-950/30 border-2 border-indigo-200 dark:border-indigo-900/60 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="font-black text-slate-900 dark:text-white flex items-center gap-2 text-xs">
+                      <Share2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                      <span>Select Social Network Platform (اختر المنصة):</span>
+                    </label>
+                    <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-100 dark:bg-indigo-900/50 px-2 py-0.5 rounded-full">
+                      {detectSocialPlatform(formData)?.label || 'Auto Detect'}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {[
+                      { id: 'pinterest', label: 'Pinterest', icon: PinterestIcon, color: 'hover:border-rose-400 hover:text-[#E60023]', activeBg: 'bg-rose-50 dark:bg-rose-950/70 text-[#E60023] border-[#E60023]' },
+                      { id: 'youtube', label: 'YouTube', icon: YouTubeIcon, color: 'hover:border-red-400 hover:text-[#FF0000]', activeBg: 'bg-red-50 dark:bg-red-950/70 text-[#FF0000] border-[#FF0000]' },
+                      { id: 'facebook', label: 'Facebook', icon: FacebookIcon, color: 'hover:border-blue-400 hover:text-[#1877F2]', activeBg: 'bg-blue-50 dark:bg-blue-950/70 text-[#1877F2] border-[#1877F2]' },
+                      { id: 'instagram', label: 'Instagram', icon: InstagramIcon, color: 'hover:border-pink-400 hover:text-[#E1306C]', activeBg: 'bg-pink-50 dark:bg-pink-950/70 text-[#E1306C] border-[#E1306C]' },
+                      { id: 'tiktok', label: 'TikTok', icon: TikTokIcon, color: 'hover:border-slate-500 hover:text-black dark:hover:text-white', activeBg: 'bg-slate-200 dark:bg-slate-800 text-black dark:text-white border-slate-600' },
+                      { id: 'twitter', label: 'X (Twitter)', icon: TwitterXIcon, color: 'hover:border-slate-500 hover:text-black dark:hover:text-white', activeBg: 'bg-slate-200 dark:bg-slate-800 text-black dark:text-white border-slate-600' },
+                      { id: 'linkedin', label: 'LinkedIn', icon: LinkedInIcon, color: 'hover:border-sky-500 hover:text-[#0A66C2]', activeBg: 'bg-sky-50 dark:bg-sky-950/70 text-[#0A66C2] border-[#0A66C2]' },
+                      { id: 'other', label: 'Other Social', icon: Share2, color: 'hover:border-indigo-400 hover:text-indigo-600', activeBg: 'bg-indigo-50 dark:bg-indigo-950/70 text-indigo-600 border-indigo-600' }
+                    ].map(platform => {
+                      const IconComp = platform.icon;
+                      const isCurrent = (formData.customType || '').toLowerCase() === platform.id || (!formData.customType && detectSocialPlatform(formData)?.id === platform.id);
+                      return (
+                        <button
+                          key={platform.id}
+                          type="button"
+                          onClick={() => {
+                            setFormData(prev => ({
+                              ...prev,
+                              customType: platform.id,
+                              url: prev.url ? prev.url : (
+                                platform.id === 'pinterest' ? 'https://pinterest.com/' :
+                                platform.id === 'youtube' ? 'https://youtube.com/@' :
+                                platform.id === 'facebook' ? 'https://facebook.com/' :
+                                platform.id === 'instagram' ? 'https://instagram.com/' :
+                                platform.id === 'tiktok' ? 'https://tiktok.com/@' :
+                                platform.id === 'twitter' ? 'https://x.com/' :
+                                platform.id === 'linkedin' ? 'https://linkedin.com/in/' : ''
+                              )
+                            }));
+                          }}
+                          className={`p-2.5 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                            isCurrent
+                              ? `${platform.activeBg} shadow-sm font-black`
+                              : darkMode
+                                ? 'bg-slate-900/60 border-slate-800 text-slate-300 ' + platform.color
+                                : 'bg-white border-slate-200 text-slate-700 ' + platform.color
+                          }`}
+                        >
+                          <IconComp size={15} />
+                          <span>{platform.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {formData.category === 'custom' && (
                 <div>
