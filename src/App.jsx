@@ -64,6 +64,7 @@ import {
   acceptInviteWithPin
 } from './supabase';
 import LandingPage from './LandingPage';
+import * as OTPAuth from 'otpauth';
 
 // ── CUSTOM VECTOR ICONS (Crisp, High-Contrast & Strict Fixed Dimensions) ──
 const GoogleIcon = ({ className = "w-5 h-5" }) => (
@@ -438,9 +439,173 @@ export default function App() {
   const [enteredInvitePin, setEnteredInvitePin] = useState('');
   const [pinErrorMsg, setPinErrorMsg] = useState('');
 
+  // ── 2FA AUTHENTICATOR (Google Authenticator / Authy) STATE ──
+  const [rememberedUser, setRememberedUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem('VM_LAST_LOGGED_IN_USER');
+      return saved ? JSON.parse(saved) : null;
+    } catch(e) { return null; }
+  });
+
+  const remembered2FA = useMemo(() => {
+    if (!rememberedUser?.email) return null;
+    try {
+      const saved = localStorage.getItem('VM_2FA_' + rememberedUser.email.toLowerCase());
+      return saved ? JSON.parse(saved) : null;
+    } catch(e) { return null; }
+  }, [rememberedUser]);
+
+  // Login Mode: 'totp' (if user previously enabled 2FA) | 'google'
+  const [loginMode, setLoginMode] = useState(() => {
+    try {
+      const saved = localStorage.getItem('VM_LAST_LOGGED_IN_USER');
+      if (saved) {
+        const u = JSON.parse(saved);
+        const t = localStorage.getItem('VM_2FA_' + u.email?.toLowerCase());
+        if (t && JSON.parse(t).enabled) return 'totp';
+      }
+    } catch(e) {}
+    return 'google';
+  });
+
+  const [enteredTotpCode, setEnteredTotpCode] = useState('');
+  const [totpError, setTotpError] = useState('');
+
+  // 2FA Setup State for Current User
+  const [show2FAModal, setShow2FAModal] = useState(false);
+  const [setupSecret, setSetupSecret] = useState('');
+  const [setupUri, setSetupUri] = useState('');
+  const [confirmTotpCode, setConfirmTotpCode] = useState('');
+  const [setupError, setSetupError] = useState('');
+
+  // Check if 2FA is active for current user
+  const is2FAActive = useMemo(() => {
+    if (!currentUser?.email) return false;
+    try {
+      const saved = localStorage.getItem('VM_2FA_' + currentUser.email.toLowerCase());
+      return saved ? JSON.parse(saved).enabled : false;
+    } catch(e) { return false; }
+  }, [currentUser]);
+
+  // Launch 2FA Setup Modal
+  const handleStart2FASetup = () => {
+    if (!currentUser?.email) return;
+    const secret = new OTPAuth.Secret({ size: 20 });
+    const totp = new OTPAuth.TOTP({
+      issuer: 'VaultMaster OS',
+      label: currentUser.email,
+      algorithm: 'SHA1',
+      digits: 6,
+      period: 30,
+      secret: secret
+    });
+
+    setSetupSecret(secret.base32);
+    setSetupUri(totp.toString());
+    setConfirmTotpCode('');
+    setSetupError('');
+    setShow2FAModal(true);
+  };
+
+  // Confirm and activate 2FA
+  const handleConfirm2FASetup = (e) => {
+    e?.preventDefault();
+    if (!confirmTotpCode || confirmTotpCode.length !== 6) {
+      setSetupError('يرجى إدخال الكود المكون من 6 أرقام كاملاً');
+      return;
+    }
+
+    try {
+      const totp = new OTPAuth.TOTP({
+        issuer: 'VaultMaster OS',
+        label: currentUser.email,
+        algorithm: 'SHA1',
+        digits: 6,
+        period: 30,
+        secret: OTPAuth.Secret.fromBase32(setupSecret)
+      });
+
+      const delta = totp.validate({ token: confirmTotpCode.trim(), window: 1 });
+      if (delta !== null) {
+        const config = {
+          enabled: true,
+          secret: setupSecret,
+          createdAt: new Date().toISOString()
+        };
+        localStorage.setItem('VM_2FA_' + currentUser.email.toLowerCase(), JSON.stringify(config));
+        
+        setTeamMembers(prev => prev.map(m => 
+          m.email?.toLowerCase() === currentUser.email?.toLowerCase() 
+            ? { ...m, twoFactorEnabled: true } 
+            : m
+        ));
+
+        confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+        setShow2FAModal(false);
+      } else {
+        setSetupError('الكود غير صحيح! يرجى إدخال الكود الظاهر حالياً في تطبيق Google Authenticator');
+      }
+    } catch (err) {
+      setSetupError('خطأ أثناء التحقق: ' + err.message);
+    }
+  };
+
+  // Daily TOTP Login Handler
+  const handleTotpLogin = (e) => {
+    e?.preventDefault();
+    if (!enteredTotpCode || enteredTotpCode.length !== 6) {
+      setTotpError('يرجى إدخال كود الـ Authenticator المكون من 6 أرقام');
+      return;
+    }
+
+    if (!rememberedUser || !remembered2FA?.secret) {
+      setTotpError('لم يتم العثور على إعدادات التحقق. يرجى تسجيل الدخول بجوجل');
+      return;
+    }
+
+    try {
+      const totp = new OTPAuth.TOTP({
+        issuer: 'VaultMaster OS',
+        label: rememberedUser.email,
+        algorithm: 'SHA1',
+        digits: 6,
+        period: 30,
+        secret: OTPAuth.Secret.fromBase32(remembered2FA.secret)
+      });
+
+      const delta = totp.validate({ token: enteredTotpCode.trim(), window: 1 });
+      if (delta !== null) {
+        setCurrentUser(rememberedUser);
+        setActiveView('app');
+        setEnteredTotpCode('');
+        setTotpError('');
+        confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 } });
+      } else {
+        setTotpError('الكود غير صحيح! تأكد من الوقت في هاتفك وأدخل الكود الحالي');
+      }
+    } catch (err) {
+      setTotpError('خطأ في التحقق: ' + err.message);
+    }
+  };
+
+  // Disable 2FA
+  const handleDisable2FA = () => {
+    if (!currentUser?.email) return;
+    if (confirm('هل أنت متأكد من رغبتك في إلغاء تفعيل التحقق بخطوتين؟ سيتطلب الدخول اليومي تسجيل الدخول بجوجل.')) {
+      localStorage.removeItem('VM_2FA_' + currentUser.email.toLowerCase());
+      setTeamMembers(prev => prev.map(m => 
+        m.email?.toLowerCase() === currentUser.email?.toLowerCase() 
+          ? { ...m, twoFactorEnabled: false } 
+          : m
+      ));
+    }
+  };
+
   useEffect(() => {
     if (currentUser) {
       localStorage.setItem('VM_CURRENT_USER', JSON.stringify(currentUser));
+      localStorage.setItem('VM_LAST_LOGGED_IN_USER', JSON.stringify(currentUser));
+      setRememberedUser(currentUser);
     } else {
       localStorage.removeItem('VM_CURRENT_USER');
     }
@@ -924,53 +1089,143 @@ export default function App() {
   }
 
   // ─────────────────────────────────────────────────────────────
-  // 1. OFFICIAL GOOGLE SIGN-IN SCREEN (تسجيل الدخول الرسمي بجوجل فقط)
+  // 1. OFFICIAL GOOGLE & 2FA AUTHENTICATOR LOGIN SCREEN
   // ─────────────────────────────────────────────────────────────
   if (!currentUser) {
+    const has2FA = rememberedUser && remembered2FA?.enabled;
+
     return (
       <div className="w-full h-full min-h-screen flex items-center justify-center bg-[#0B132B] relative overflow-hidden font-sans">
         <div className="absolute top-1/4 left-1/3 w-[500px] h-[500px] bg-blue-600/15 rounded-full blur-[140px] pointer-events-none"></div>
 
         <div className="w-full max-w-md p-9 bg-slate-900/95 backdrop-blur-2xl border border-slate-700/80 rounded-3xl shadow-2xl text-center z-10 m-4">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center mx-auto mb-5 shadow-xl shadow-blue-500/25">
-            <ShieldCheck className="w-9 h-9 text-white stroke-[2.2]" />
-          </div>
+          
+          {has2FA && loginMode === 'totp' ? (
+            /* DAILY TOTP AUTHENTICATOR LOGIN (الدخول اليومي بـ Authenticator) */
+            <>
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-cyan-600 to-blue-600 flex items-center justify-center mx-auto mb-4 shadow-xl shadow-cyan-500/25">
+                <Smartphone className="w-9 h-9 text-white stroke-[2.2]" />
+              </div>
 
-          <h2 className="text-2xl font-black text-white tracking-tight">VaultMaster OS</h2>
-          <p className="text-xs text-slate-400 mt-1 mb-8 font-mono">
-            Sovereign Encrypted Cloud Vault
-          </p>
+              <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-cyan-400 bg-cyan-950/80 border border-cyan-800/80 px-3 py-1 rounded-full">
+                Daily Authenticator Unlock
+              </span>
 
-          <div className="space-y-4">
-            {/* The One and Only Official Google Sign-In Button */}
-            <button
-              onClick={handleGoogleLogin}
-              disabled={authLoading}
-              className="w-full py-4 px-6 bg-white hover:bg-slate-100 text-slate-900 font-bold text-sm rounded-2xl shadow-xl transition active:scale-[0.98] cursor-pointer flex items-center justify-center gap-3 border border-slate-200"
-            >
-              <GoogleIcon className="w-5 h-5" />
-              <span>{authLoading ? 'Signing in with Google...' : 'Sign in with Google (تسجيل الدخول بجوجل)'}</span>
-            </button>
+              <h2 className="text-2xl font-black text-white tracking-tight mt-3">VaultMaster OS</h2>
+              
+              <div className="flex items-center justify-center gap-2 mt-2 mb-6 p-2 rounded-xl bg-slate-800/60 border border-slate-700/60">
+                <div className="w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center">
+                  {rememberedUser.name?.charAt(0).toUpperCase() || 'U'}
+                </div>
+                <span className="text-xs text-slate-300 font-mono truncate max-w-[220px]">
+                  {rememberedUser.email}
+                </span>
+              </div>
 
-            {authError && (
-              <p className="text-xs text-rose-400 font-bold mt-2">{authError}</p>
-            )}
+              <form onSubmit={handleTotpLogin} className="space-y-4">
+                <div className="space-y-1.5 text-left">
+                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block text-center">
+                    Enter 6-digit Authenticator Code:
+                  </label>
+                  <input
+                    type="text"
+                    maxLength={6}
+                    autoFocus
+                    required
+                    value={enteredTotpCode}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '');
+                      setEnteredTotpCode(val);
+                      setTotpError('');
+                    }}
+                    placeholder="• • • • • •"
+                    className="w-full text-center tracking-[0.6em] text-2xl font-mono py-3.5 px-4 bg-slate-950 border border-slate-700 focus:border-cyan-500 rounded-2xl text-white outline-none shadow-inner"
+                  />
+                  <span className="block text-[10px] text-slate-500 text-center font-sans mt-1">
+                    أدخل كود الـ 6 أرقام من تطبيق Authenticator في هاتفك
+                  </span>
+                </div>
 
-            {!isDesktop && (
-              <button
-                onClick={() => {
-                  if (typeof window !== 'undefined') {
-                    window.location.hash = '';
-                  }
-                  setActiveView('landing');
-                }}
-                className="pt-2 text-xs text-slate-400 hover:text-white flex items-center justify-center gap-1.5 mx-auto transition cursor-pointer"
-              >
-                <span>←</span>
-                <span>Back to Homepage (العودة للرئيسية)</span>
-              </button>
-            )}
-          </div>
+                {totpError && (
+                  <p className="text-xs text-rose-400 font-bold bg-rose-950/40 border border-rose-800/50 p-2 rounded-xl">
+                    {totpError}
+                  </p>
+                )}
+
+                <button
+                  type="submit"
+                  className="w-full py-4 px-6 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-extrabold text-sm rounded-2xl shadow-xl transition active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
+                >
+                  <span>Unlock Vault (فتح الخزينة) ➔</span>
+                </button>
+              </form>
+
+              <div className="pt-4 mt-6 border-t border-slate-800 flex flex-col gap-2">
+                <button
+                  type="button"
+                  onClick={() => setLoginMode('google')}
+                  className="text-xs text-slate-400 hover:text-white transition cursor-pointer flex items-center justify-center gap-2"
+                >
+                  <GoogleIcon className="w-4 h-4" />
+                  <span>Or sign in with Google (أو الدخول بجوجل)</span>
+                </button>
+              </div>
+            </>
+          ) : (
+            /* OFFICIAL GOOGLE SIGN-IN */
+            <>
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center mx-auto mb-5 shadow-xl shadow-blue-500/25">
+                <ShieldCheck className="w-9 h-9 text-white stroke-[2.2]" />
+              </div>
+
+              <h2 className="text-2xl font-black text-white tracking-tight">VaultMaster OS</h2>
+              <p className="text-xs text-slate-400 mt-1 mb-8 font-mono">
+                Sovereign Encrypted Cloud Vault
+              </p>
+
+              <div className="space-y-4">
+                <button
+                  onClick={handleGoogleLogin}
+                  disabled={authLoading}
+                  className="w-full py-4 px-6 bg-white hover:bg-slate-100 text-slate-900 font-bold text-sm rounded-2xl shadow-xl transition active:scale-[0.98] cursor-pointer flex items-center justify-center gap-3 border border-slate-200"
+                >
+                  <GoogleIcon className="w-5 h-5" />
+                  <span>{authLoading ? 'Signing in with Google...' : 'Sign in with Google (تسجيل الدخول بجوجل)'}</span>
+                </button>
+
+                {authError && (
+                  <p className="text-xs text-rose-400 font-bold mt-2">{authError}</p>
+                )}
+
+                {has2FA && (
+                  <button
+                    type="button"
+                    onClick={() => setLoginMode('totp')}
+                    className="w-full py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-cyan-400 font-bold text-xs rounded-xl transition cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    <Smartphone className="w-4 h-4" />
+                    <span>Quick Unlock with Authenticator (الدخول بـ Authenticator)</span>
+                  </button>
+                )}
+
+                {!isDesktop && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (typeof window !== 'undefined') {
+                        window.location.hash = '';
+                      }
+                      setActiveView('landing');
+                    }}
+                    className="pt-2 text-xs text-slate-400 hover:text-white flex items-center justify-center gap-1.5 mx-auto transition cursor-pointer"
+                  >
+                    <span>←</span>
+                    <span>Back to Homepage (العودة للرئيسية)</span>
+                  </button>
+                )}
+              </div>
+            </>
+          )}
 
           <div className="mt-8 pt-4 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-500 font-mono">
             <span>End-to-End Encrypted</span>
@@ -1063,6 +1318,47 @@ export default function App() {
               <span>{healthStats.deploys} Vercel</span>
             </div>
           </div>
+
+          {/* 2FA Authenticator Status / Setup Card */}
+          {!is2FAActive ? (
+            <div className="p-3 mx-4 mt-3 rounded-2xl bg-gradient-to-br from-indigo-950/60 via-slate-900 to-blue-950/60 border border-indigo-500/30 shadow-lg text-left">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="flex items-center gap-1.5 text-xs font-black text-cyan-300">
+                  <Smartphone className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>2FA Authenticator</span>
+                </span>
+                <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                  موصى به
+                </span>
+              </div>
+              <p className="text-[10px] text-slate-300 leading-tight mb-2.5">
+                فعّل التحقق بخطوتين عبر هاتفك لتسجيل الدخول السريع يومياً برمز 6 أرقام.
+              </p>
+              <button
+                onClick={handleStart2FASetup}
+                className="w-full py-1.5 px-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs shadow-md transition cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <span>تفعيل التحقق بخطوتين ➔</span>
+              </button>
+            </div>
+          ) : (
+            <div className="p-3 mx-4 mt-3 rounded-2xl bg-emerald-950/40 border border-emerald-500/30 flex items-center justify-between text-left">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                <div>
+                  <div className="text-xs font-bold text-emerald-300">2FA Protected</div>
+                  <div className="text-[10px] text-slate-400 font-mono">Google Authenticator Active</div>
+                </div>
+              </div>
+              <button
+                onClick={handleDisable2FA}
+                className="text-[10px] text-slate-400 hover:text-rose-400 font-mono transition cursor-pointer"
+                title="إلغاء التفعيل"
+              >
+                Disable
+              </button>
+            </div>
+          )}
 
           {/* Navigation Categories */}
           <div className="p-4 space-y-1 max-h-[calc(100vh-360px)] overflow-y-auto">
@@ -2565,6 +2861,105 @@ export default function App() {
       )}
 
       {/* ─────────────────── ADD / EDIT MODAL ─────────────────── */}
+      {/* 2FA SETUP MODAL (Google Authenticator / Authy) */}
+      {show2FAModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-700 rounded-3xl max-w-md w-full p-8 shadow-2xl text-center text-white relative">
+            <button
+              onClick={() => setShow2FAModal(false)}
+              className="absolute top-5 right-5 p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-cyan-600 to-blue-600 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-cyan-500/20">
+              <QrCode className="w-7 h-7 text-white stroke-[2.2]" />
+            </div>
+
+            <h3 className="text-xl font-black tracking-tight text-white">
+              تفعيل التحقق بخطوتين (2FA)
+            </h3>
+            <p className="text-xs text-slate-400 mt-1 mb-5 leading-relaxed">
+              اربط حسابك بتطبيق <span className="text-cyan-400 font-bold">Google Authenticator</span> أو <span className="text-cyan-400 font-bold">Authy</span> لتأمين خزينتك وتفعيل الدخول السريع اليومي.
+            </p>
+
+            {/* Step 1: Scan QR Code */}
+            <div className="bg-white p-3 rounded-2xl inline-block mx-auto mb-4 shadow-md">
+              <img 
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(setupUri)}`} 
+                alt="2FA QR Code" 
+                className="w-40 h-40 mx-auto rounded-lg"
+              />
+            </div>
+
+            {/* Secret Key in plain text */}
+            <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl mb-5 text-left flex items-center justify-between">
+              <div>
+                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">
+                  أو أدخل المفتاح يدوياً (Secret Key):
+                </span>
+                <span className="font-mono text-xs text-cyan-300 font-bold tracking-wider select-all">
+                  {setupSecret}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(setupSecret);
+                  setCopiedId('2fa-secret');
+                  setTimeout(() => setCopiedId(null), 2000);
+                }}
+                className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition cursor-pointer"
+                title="نسخ المفتاح"
+              >
+                {copiedId === '2fa-secret' ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+              </button>
+            </div>
+
+            {/* Step 2: Confirm 6-digit code */}
+            <form onSubmit={handleConfirm2FASetup} className="space-y-4">
+              <div className="text-left space-y-1.5">
+                <label className="text-xs font-bold text-slate-300 block text-center">
+                  أدخل الكود المكون من 6 أرقام لتأكيد الربط:
+                </label>
+                <input
+                  type="text"
+                  maxLength={6}
+                  required
+                  autoFocus
+                  placeholder="• • • • • •"
+                  value={confirmTotpCode}
+                  onChange={(e) => setConfirmTotpCode(e.target.value.replace(/\D/g, ''))}
+                  className="w-full text-center tracking-[0.5em] text-2xl font-mono py-3 px-4 bg-slate-950 border border-slate-700 focus:border-cyan-500 rounded-xl text-white outline-none"
+                />
+              </div>
+
+              {setupError && (
+                <p className="text-xs text-rose-400 font-bold bg-rose-950/40 border border-rose-800/50 p-2 rounded-xl">
+                  {setupError}
+                </p>
+              )}
+
+              <div className="flex gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setShow2FAModal(false)}
+                  className="w-1/3 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition cursor-pointer"
+                >
+                  إلغاء
+                </button>
+                <button
+                  type="submit"
+                  className="w-2/3 py-3 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-extrabold text-xs shadow-lg transition cursor-pointer"
+                >
+                  تأكيد وتفعيل 2FA ➔
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {showModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className={`rounded-3xl max-w-2xl w-full p-9 shadow-2xl border max-h-[92vh] overflow-y-auto ${
