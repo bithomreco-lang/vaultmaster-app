@@ -61,7 +61,9 @@ import {
   deleteVaultItemFromCloud,
   fetchTeamInvitesFromCloud,
   saveTeamInviteToCloud,
-  acceptInviteWithPin
+  acceptInviteWithPin,
+  fromCloudItem,
+  fromCloudInvite
 } from './supabase';
 import LandingPage from './LandingPage';
 import * as OTPAuth from 'otpauth';
@@ -787,18 +789,22 @@ export default function App() {
       .channel('public:vault_sync')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'vault_items' }, (payload) => {
         if (payload.eventType === 'INSERT') {
-          setVaultItems(prev => [payload.new, ...prev.filter(i => i.id !== payload.new.id)]);
+          const item = fromCloudItem(payload.new);
+          setVaultItems(prev => [item, ...prev.filter(i => i.id !== item.id)]);
         } else if (payload.eventType === 'UPDATE') {
-          setVaultItems(prev => prev.map(i => i.id === payload.new.id ? payload.new : i));
+          const item = fromCloudItem(payload.new);
+          setVaultItems(prev => prev.map(i => i.id === item.id ? item : i));
         } else if (payload.eventType === 'DELETE') {
           setVaultItems(prev => prev.filter(i => i.id !== payload.old.id));
         }
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'team_invitations' }, (payload) => {
         if (payload.eventType === 'INSERT') {
-          setTeamMembers(prev => [...prev.filter(m => m.id !== payload.new.id), payload.new]);
+          const inv = fromCloudInvite(payload.new);
+          setTeamMembers(prev => [...prev.filter(m => m.id !== inv.id), inv]);
         } else if (payload.eventType === 'UPDATE') {
-          setTeamMembers(prev => prev.map(m => m.id === payload.new.id ? payload.new : m));
+          const inv = fromCloudInvite(payload.new);
+          setTeamMembers(prev => prev.map(m => m.id === inv.id ? inv : m));
         } else if (payload.eventType === 'DELETE') {
           setTeamMembers(prev => prev.filter(m => m.id !== payload.old.id));
         }
@@ -822,28 +828,39 @@ export default function App() {
   const [handshakeError, setHandshakeError] = useState('');
   const [handshakeStep, setHandshakeStep] = useState(1); // 1: PIN, 2: 2FA, 3: Success
 
+  const [createdInviteData, setCreatedInviteData] = useState(null);
+
   const handleSendInvite = (e) => {
     e.preventDefault();
     if (!inviteEmail) return;
 
+    const emailClean = inviteEmail.trim().toLowerCase();
+    const currentPin = invitePin;
+
     const newInvite = {
       id: 'mem-' + Date.now(),
-      name: inviteEmail.split('@')[0],
-      email: inviteEmail.trim(),
+      name: emailClean.split('@')[0],
+      email: emailClean,
       role: inviteRole,
       status: 'pending',
       invitedAt: 'Today',
-      pin: invitePin,
+      pin: currentPin,
       twoFactorEnabled: false
     };
 
-    setTeamMembers(prev => [...prev, newInvite]);
+    setTeamMembers(prev => [...prev.filter(m => m.email?.toLowerCase() !== emailClean), newInvite]);
     saveTeamInviteToCloud(newInvite);
-    confetti({ particleCount: 40, spread: 60 });
-    setInviteSuccessMsg(`Encrypted invitation created for ${inviteEmail}! Share the 4-digit PIN: ${invitePin}`);
+    confetti({ particleCount: 50, spread: 60 });
+    
+    setCreatedInviteData({
+      email: emailClean,
+      pin: currentPin,
+      role: inviteRole
+    });
+
+    setInviteSuccessMsg(`تم حفظ الدعوة بنجاح في السحابة لـ ${emailClean}! كود الأمان هو: ${currentPin}`);
     setInviteEmail('');
     setInvitePin(Math.floor(1000 + Math.random() * 9000).toString());
-    setTimeout(() => setInviteSuccessMsg(''), 7000);
   };
 
   const handleRevokeMember = (id) => {
@@ -1685,11 +1702,63 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Success Alert */}
-              {inviteSuccessMsg && (
-                <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 text-xs font-bold flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>{inviteSuccessMsg}</span>
+              {/* Rich Invitation Action Card */}
+              {createdInviteData && (
+                <div className="p-5 rounded-2xl bg-gradient-to-br from-emerald-950/80 to-slate-900 border border-emerald-500/50 shadow-xl space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="flex items-center gap-2 text-xs font-bold text-emerald-300">
+                      <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                      <span>تم حفظ الدعوة بنجاح في قاعدة البيانات السحابية!</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setCreatedInviteData(null)}
+                      className="text-xs text-slate-400 hover:text-white cursor-pointer"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800 text-xs text-slate-300 flex items-center justify-between">
+                    <div>
+                      <div className="text-[11px] text-slate-500">إيميل الشريك المدعو:</div>
+                      <div className="font-mono font-bold text-white text-xs">{createdInviteData.email}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-[11px] text-slate-500">كود الأمان للدخول (PIN):</div>
+                      <div className="font-mono font-black text-cyan-400 text-lg tracking-widest">{createdInviteData.pin}</div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2.5 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const subject = encodeURIComponent('دعوة للانضمام إلى محفظة VaultMaster المشتركة');
+                        const body = encodeURIComponent(`مرحباً،\n\nلقد تمت دعوتك للانضمام إلى محفظة VaultMaster المشتركة.\n\nرابط الدخول: https://vaultmaster-app.vercel.app\nكود الأمان الخاص بك للدخول (PIN): ${createdInviteData.pin}\n\nخطوات الدخول:\n1. افتح الرابط وسجل الدخول بحسابك في Google (${createdInviteData.email}).\n2. ستظهر لك رسالة تفيد بوجود دعوة بانتظارك، أدخل كود الأمان المكون من 4 أرقام أعلاه لتفتح لك المحفظة المشتركة فوراً!`);
+                        const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(createdInviteData.email)}&su=${subject}&body=${body}`;
+                        window.open(gmailUrl, '_blank');
+                      }}
+                      className="flex-1 py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-md flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <Mail className="w-4 h-4" />
+                      <span>فتح Gmail لإرسال الدعوة للشريك الآن ➔</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const text = `دعوة للانضمام إلى محفظة VaultMaster:\nالرابط: https://vaultmaster-app.vercel.app\nكود الأمان للدخول (PIN): ${createdInviteData.pin}\n(ادخل بحسابك ${createdInviteData.email} ثم ضع كود الأمان لتفتح لك المحفظة المشتركة).`;
+                        navigator.clipboard.writeText(text);
+                        setCopiedId('invite-full');
+                        setTimeout(() => setCopiedId(null), 2500);
+                      }}
+                      className="py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      {copiedId === 'invite-full' ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                      <span>{copiedId === 'invite-full' ? 'تم النسخ!' : 'نسخ الرسالة كاملة'}</span>
+                    </button>
+                  </div>
                 </div>
               )}
 
